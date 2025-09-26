@@ -33,6 +33,39 @@
   <p>Indsæt jobopslaget her:</p>
   <textarea id="jobtext" placeholder="Indsæt jobtekst..."></textarea>
 
+  <h2>Din profil (til ansøgningen)</h2>
+<p>Skriv kort: resumé + 5–8 nøglepunkter (styrker/resultater/tech).</p>
+<textarea id="profile" placeholder="Fx:
+Performance manager med 6+ år i pensionsbranchen...
+- Zapier-automatisering der reducerede manuelle timer med 40%
+- Power BI-dashboards for salg/indtjening
+- SQL basics, stærk logisk tænkning
+- Samarbejde med salgsledelse, kommercielt fokus
+"></textarea>
+
+<div class="row">
+  <label for="tone">Tone:</label>
+  <select id="tone">
+    <option value="professionel" selected>Professionel</option>
+    <option value="entusiastisk">Entusiastisk</option>
+    <option value="selvsikker">Selvsikker</option>
+    <option value="venlig">Venlig</option>
+  </select>
+
+  <label for="len">Længde:</label>
+  <select id="len">
+    <option value="short">Kort</option>
+    <option value="medium" selected>Mellem</option>
+    <option value="long">Lang</option>
+  </select>
+
+  <button id="genLetter">Generér ansøgning</button>
+  <button id="copyLetter">Kopiér ansøgning</button>
+</div>
+
+<h2>Ansøgning</h2>
+<div id="letterCard" class="card" style="white-space:pre-wrap; display:none"></div>
+  
   <h2>Resultat</h2>
   <div id="briefCard" class="card" style="display:none">
     <div class="h">Rolle</div><div id="role"></div>
@@ -132,5 +165,40 @@ ${$('kw').textContent}
       html2pdf().set(opt).from($('briefCard')).save();
     };
   </script>
+  <script>
+  // Generér ansøgning
+  document.getElementById('genLetter').onclick = async () => {
+    const job_text = document.getElementById('jobtext').value.trim();
+    const candidate_profile = document.getElementById('profile').value.trim();
+    const language = document.getElementById('lang').value;
+    const tone = document.getElementById('tone').value;
+    const length = document.getElementById('len').value;
+
+    if (!job_text || !candidate_profile) {
+      alert('Udfyld både jobopslag og kandidatprofil.'); return;
+    }
+
+    const resp = await fetch('/api/coverletter', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ job_text, candidate_profile, language, tone, length })
+    });
+    const data = await resp.json();
+    if (data.error) { alert('Fejl: ' + (data.detail || data.error)); return; }
+
+    const card = document.getElementById('letterCard');
+    card.textContent = data.letter || '(intet svar)';
+    card.style.display = 'block';
+  };
+
+  // Kopiér ansøgning
+  document.getElementById('copyLetter').onclick = async () => {
+    const text = document.getElementById('letterCard').textContent.trim();
+    if (!text) { alert('Der er ikke genereret en ansøgning endnu.'); return; }
+    try { await navigator.clipboard.writeText(text); alert('Ansøgning kopieret!'); }
+    catch { alert('Kunne ikke kopiere.'); }
+  };
+</script>
 </body>
+
 </html>
