@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jobopslag → Kandidat-brief</title>
+  <style>
+    body { font-family: system-ui, Arial; max-width: 900px; margin: 24px auto; padding: 0 12px; }
+    textarea { width: 100%; height: 260px; }
+    pre { background: #f6f8fa; padding: 12px; overflow:auto; border-radius: 6px; }
+    .row{ display:flex; gap:12px; align-items:center; flex-wrap: wrap; }
+    select, button { padding: 8px 12px; cursor:pointer; }
+    .card { border:1px solid #e5e7eb; border-radius:8px; padding:12px; margin-top:12px; }
+    .h { font-weight:600; margin: 6px 0; }
+    ul { margin:6px 0 0 18px; }
+  </style>
+  <!-- Klient-side PDF (helt gratis) -->
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+  <h1>Jobopslag → Kandidat-brief</h1>
+  <div class="row">
+    <label for="lang">Sprog:</label>
+    <select id="lang">
+      <option value="da" selected>dansk</option>
+      <option value="en">english</option>
+    </select>
+    <button id="gen">Generér brief</button>
+    <button id="copy">Kopiér til ATS</button>
+    <button id="pdf">Download PDF</button>
+  </div>
+
+  <p>Indsæt jobopslaget her:</p>
+  <textarea id="jobtext" placeholder="Indsæt jobtekst..."></textarea>
+
+  <h2>Resultat</h2>
+  <div id="briefCard" class="card" style="display:none">
+    <div class="h">Rolle</div><div id="role"></div>
+    <div class="h">Seniority</div><div id="seniority"></div>
+    <div class="h">Team/kontekst</div><div id="team"></div>
+    <div class="h">Domæne</div><div id="domain"></div>
+    <div class="h">Must-haves</div><ul id="must"></ul>
+    <div class="h">Nice-to-haves</div><ul id="nice"></ul>
+    <div class="h">KPI’er</div><ul id="kpis"></ul>
+    <div class="h">Screening-spørgsmål</div><ul id="qs"></ul>
+    <div class="h">Red flags</div><ul id="rf"></ul>
+    <div class="h">30-sek pitch</div><div id="pitch"></div>
+    <div class="h">Keywords</div><div id="kw"></div>
+  </div>
+
+  <h3>JSON (til debug)</h3>
+  <pre id="out">{ }</pre>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function fillList(el, arr) {
+      el.innerHTML = '';
+      (arr || []).forEach(x => {
+        const li = document.createElement('li');
+        li.textContent = x;
+        el.appendChild(li);
+      });
+    }
+
+    function renderBrief(b) {
+      $('briefCard').style.display = 'block';
+      $('role').textContent       = b.role_title || '';
+      $('seniority').textContent  = b.seniority || '';
+      $('team').textContent       = b.team_context || '';
+      $('domain').textContent     = b.domain || '';
+      fillList($('must'), b.must_haves);
+      fillList($('nice'), b.nice_to_haves);
+      fillList($('kpis'), b.kpis);
+      fillList($('qs'), b.screen_questions);
+      fillList($('rf'), b.red_flags);
+      $('pitch').textContent      = b.candidate_pitch_30s || '';
+      $('kw').textContent         = (b.keywords || []).join(', ');
+    }
+
+    $('gen').onclick = async () => {
+      const job_text = $('jobtext').value.trim();
+      const language = $('lang').value;
+      $('out').textContent = 'Arbejder...';
+      const resp = await fetch('/api/brief', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ job_text, language })
+      });
+      const data = await resp.json();
+      const brief = data.brief || data;
+      $('out').textContent = JSON.stringify(brief, null, 2);
+      renderBrief(brief);
+    };
+
+    // ATS-kopi (ren tekst, pæn formatering)
+    $('copy').onclick = async () => {
+      const t = `
+Rolle: ${$('role').textContent}
+Seniority: ${$('seniority').textContent}
+Team/kontekst: ${$('team').textContent}
+Domæne: ${$('domain').textContent}
+
+Must-haves:
+- ${Array.from($('must').children).map(li => li.textContent).join('\n- ')}
+
+Nice-to-haves:
+- ${Array.from($('nice').children).map(li => li.textContent).join('\n- ')}
+
+KPI'er:
+- ${Array.from($('kpis').children).map(li => li.textContent).join('\n- ')}
+
+Screening-spørgsmål:
+- ${Array.from($('qs').children).map(li => li.textContent).join('\n- ')}
+
+Red flags:
+- ${Array.from($('rf').children).map(li => li.textContent).join('\n- ')}
+
+30-sek pitch:
+${$('pitch').textContent}
+
+Keywords:
+${$('kw').textContent}
+`.trim();
+      try { await navigator.clipboard.writeText(t); alert('Kopieret til udklipsholder (kan indsættes i ATS/Notion)!'); }
+      catch(e) { alert('Kunne ikke kopiere'); }
+    };
+
+    // PDF-download (klientside)
+    $('pdf').onclick = () => {
+      const opt = { margin: 10, filename: 'kandidat-brief.pdf' };
+      html2pdf().set(opt).from($('briefCard')).save();
+    };
+  </script>
+</body>
+</html>
