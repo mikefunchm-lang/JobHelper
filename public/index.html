@@ -63,6 +63,18 @@ Performance manager med 6+ år i pensionsbranchen...
   <button id="copyLetter">Kopiér ansøgning</button>
 </div>
 
+
+  <h2>Joblinks (ét pr. linje)</h2>
+<p>Indsæt direkte links til jobopslag (fx fra e-mail alerts eller manuelt fra jobportaler).</p>
+<textarea id="joburls" placeholder="https://...job1
+https://...job2"></textarea>
+<div class="row">
+  <button id="match">Søg & match</button>
+</div>
+
+<h2>Match-resultat</h2>
+<div id="jobs"></div>
+  
 <h2>Ansøgning</h2>
 <div id="letterCard" class="card" style="white-space:pre-wrap; display:none"></div>
   
@@ -199,6 +211,92 @@ ${$('kw').textContent}
     catch { alert('Kunne ikke kopiere.'); }
   };
 </script>
+  <script>
+  function createJobCard(job) {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
+      <div class="h">${job.title}</div>
+      <div><a href="${job.url}" target="_blank">${job.url}</a></div>
+      <div><strong>Score:</strong> ${job.score}/100</div>
+      <p>${job.summary}</p>
+      <div class="row">
+        <button class="btn-brief">Generér brief</button>
+        <button class="btn-letter">Generér ansøgning</button>
+      </div>
+    `;
+
+    // Knap: Brief
+    div.querySelector('.btn-brief').onclick = async () => {
+      const language = document.getElementById('lang').value;
+      // Genbrug /api/brief: sender URL (serveren trækker selv tekst ud)
+      const resp = await fetch('/api/brief', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ job_text: job.url, language })
+      });
+      const data = await resp.json();
+      // Vis i dit eksisterende briefCard
+      const brief = data.brief || data;
+      document.getElementById('out').textContent = JSON.stringify(brief, null, 2);
+      // udfyld kortet
+      const fillList = (el, arr) => { el.innerHTML=''; (arr||[]).forEach(x=>{ const li=document.createElement('li'); li.textContent=x; el.appendChild(li); }); };
+      document.getElementById('briefCard').style.display = 'block';
+      document.getElementById('role').textContent = brief.role_title || '';
+      document.getElementById('seniority').textContent = brief.seniority || '';
+      document.getElementById('team').textContent = brief.team_context || '';
+      document.getElementById('domain').textContent = brief.domain || '';
+      fillList(document.getElementById('must'), brief.must_haves);
+      fillList(document.getElementById('nice'), brief.nice_to_haves);
+      fillList(document.getElementById('kpis'), brief.kpis);
+      fillList(document.getElementById('qs'), brief.screen_questions);
+      fillList(document.getElementById('rf'), brief.red_flags);
+      document.getElementById('pitch').textContent = brief.candidate_pitch_30s || '';
+      document.getElementById('kw').textContent = (brief.keywords||[]).join(', ');
+      // Hvis du tilføjede løn/benefits før:
+      const comp = document.getElementById('comp'); if (comp) comp.textContent = brief.compensation ? [brief.compensation.range, brief.compensation.currency, brief.compensation.notes].filter(Boolean).join(' | ') : '';
+      const ben = document.getElementById('benefits'); if (ben) { ben.innerHTML=''; (brief.benefits||[]).forEach(x=>{ const li=document.createElement('li'); li.textContent=x; ben.appendChild(li); }); }
+      window.scrollTo({ top: document.getElementById('briefCard').offsetTop - 20, behavior: 'smooth' });
+    };
+
+    // Knap: Ansøgning
+    div.querySelector('.btn-letter').onclick = async () => {
+      const language = document.getElementById('lang').value;
+      const tone = document.getElementById('tone')?.value || 'professionel';
+      const length = document.getElementById('len')?.value || 'medium';
+      const candidate_profile = document.getElementById('profile').value.trim();
+      const resp = await fetch('/api/coverletter', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ job_text: job.url, candidate_profile, language, tone, length })
+      });
+      const data = await resp.json();
+      const card = document.getElementById('letterCard');
+      if (card) { card.textContent = data.letter || '(intet svar)'; card.style.display='block'; }
+      window.scrollTo({ top: card.offsetTop - 20, behavior: 'smooth' });
+    };
+
+    return div;
+  }
+
+  document.getElementById('match').onclick = async () => {
+    const urlsRaw = document.getElementById('joburls').value.trim();
+    const candidate_profile = document.getElementById('profile').value.trim();
+    const language = document.getElementById('lang').value;
+    if (!urlsRaw) { alert('Indsæt mindst ét joblink.'); return; }
+    if (!candidate_profile) { alert('Udfyld kandidatprofil.'); return; }
+    const urls = urlsRaw.split('\n').map(s => s.trim()).filter(Boolean);
+    const resp = await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ urls, candidate_profile, language })
+    });
+    const data = await resp.json();
+    const wrap = document.getElementById('jobs'); wrap.innerHTML = '';
+    (data.jobs || []).forEach(j => wrap.appendChild(createJobCard(j)));
+  };
+</script>
 </body>
 
 </html>
+
