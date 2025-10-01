@@ -154,12 +154,70 @@
   </div>
 
   <div class="wrap">
-    <!-- Controls -->
-    <div class="card">
-      <h2 class="title">Generér brief • kopiér til ATS • download PDF</h2>
-      <p class="sub">Indsæt jobopslag som tekst eller URL. Vælg sprog og klik “Generér brief”.</p>
+  <!-- 1) DIN PROFIL ØVERST -->
+  <div class="card">
+    <h2 class="title">Din profil • Generér ansøgning</h2>
+    <p class="sub">Skriv kort resumé + 5–8 nøglepunkter (styrker/resultater/tech). Vælg tone og længde.</p>
 
-      <div class="grid-2">
+    <div class="grid-2">
+      <div>
+        <div class="h">Din profil</div>
+        <textarea id="profile" placeholder="Fx:
+Performance manager med 6+ år i pensions-/forsikringsbranchen...
+- Zapier-automatisering der reducerede manuelle timer med 40%
+- Power BI-dashboards for salg/indtjening
+- SQL basics, stærk logisk tænkning
+- Samarbejde med salgsledelse, kommercielt fokus
+"></textarea>
+      </div>
+      <div>
+        <div class="grid-2">
+          <div>
+            <label for="tone">Tone</label><br/>
+            <select id="tone">
+              <option value="professionel" selected>Professionel</option>
+              <option value="entusiastisk">Entusiastisk</option>
+              <option value="selvsikker">Selvsikker</option>
+              <option value="venlig">Venlig</option>
+            </select>
+          </div>
+          <div>
+            <label for="len">Længde</label><br/>
+            <select id="len">
+              <option value="short">Kort</option>
+              <option value="medium" selected>Mellem</option>
+              <option value="long">Lang</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:14px">
+          <button id="genLetter" class="btn">Generér ansøgning</button>
+          <button id="copyLetter" class="btn ghost">Kopiér ansøgning</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2) TO KORT SIDE-OM-SIDE: (A) MATCH-LINKS • (B) JOBOPSLAG/BRIEF -->
+  <div class="grid-2">
+    <!-- (A) Venstre: Joblinks match -->
+    <div class="card">
+      <h2 class="title">Søg & match joblinks</h2>
+      <p class="sub">Indsæt direkte links (ét pr. linje). Systemet kører i batches og scorer relevans ift. din profil.</p>
+      <textarea id="joburls" placeholder="https://...job1
+https://...job2"></textarea>
+      <div style="display:flex; gap:10px; margin-top:12px; align-items:center">
+        <button id="match" class="btn">Søg & match</button>
+        <div id="statusbar"><span class="spinner"></span><span id="statusmsg">Arbejder…</span></div>
+      </div>
+    </div>
+
+    <!-- (B) Højre: Jobopslag + brief/ATS/PDF -->
+    <div class="card">
+      <h2 class="title">Jobopslag • Brief & eksport</h2>
+      <p class="sub">Indsæt jobopslag som tekst eller URL. Vælg sprog og generér brief.</p>
+
+      <div style="display:flex; gap:10px; align-items:end; justify-content:space-between; flex-wrap:wrap">
         <div>
           <label for="lang">Sprog</label><br/>
           <select id="lang">
@@ -167,114 +225,59 @@
             <option value="en">english</option>
           </select>
         </div>
-        <div style="display:flex; gap:10px; align-items:end; justify-content:flex-end">
+        <div style="display:flex; gap:10px">
           <button id="gen" class="btn">Generér brief</button>
           <button id="copy" class="btn ghost">Kopiér til ATS</button>
           <button id="pdf" class="btn secondary">Download PDF</button>
         </div>
       </div>
 
-      <div class="h">Jobopslag (tekst eller link)</div>
+      <div class="h" style="margin-top:10px">Jobopslag (tekst eller link)</div>
       <textarea id="jobtext" placeholder="Indsæt jobtekst eller URL..."></textarea>
     </div>
+  </div>
 
-    <!-- Profil + ansøgning -->
+  <!-- 3) RESULTATER: Brief + Ansøgning -->
+  <div class="grid-2">
+    <!-- Brief -->
     <div class="card">
-      <h2 class="title">Din profil • Generér ansøgning</h2>
-      <p class="sub">Skriv kort resumé + 5–8 nøglepunkter (styrker/resultater/tech). Vælg tone og længde.</p>
-
-      <div class="grid-2">
-        <div>
-          <div class="h">Din profil</div>
-          <textarea id="profile" placeholder="Fx:
-Performance manager med 6+ år i pensions-/forsikringsbranchen...
-- Zapier-automatisering der reducerede manuelle timer med 40%
-- Power BI-dashboards for salg/indtjening
-- SQL basics, stærk logisk tænkning
-- Samarbejde med salgsledelse, kommercielt fokus
-"></textarea>
-        </div>
-        <div>
-          <div class="grid-2">
-            <div>
-              <label for="tone">Tone</label><br/>
-              <select id="tone">
-                <option value="professionel" selected>Professionel</option>
-                <option value="entusiastisk">Entusiastisk</option>
-                <option value="selvsikker">Selvsikker</option>
-                <option value="venlig">Venlig</option>
-              </select>
-            </div>
-            <div>
-              <label for="len">Længde</label><br/>
-              <select id="len">
-                <option value="short">Kort</option>
-                <option value="medium" selected>Mellem</option>
-                <option value="long">Lang</option>
-              </select>
-            </div>
-          </div>
-          <div style="display:flex; gap:10px; margin-top:14px">
-            <button id="genLetter" class="btn">Generér ansøgning</button>
-            <button id="copyLetter" class="btn ghost">Kopiér ansøgning</button>
-          </div>
-        </div>
+      <h3 class="title">Kandidat-brief</h3>
+      <div id="briefCard" style="display:none">
+        <div class="h">Rolle</div><div id="role"></div>
+        <div class="h">Seniority</div><div id="seniority"></div>
+        <div class="h">Team/kontekst</div><div id="team"></div>
+        <div class="h">Domæne</div><div id="domain"></div>
+        <div class="h">Must-haves</div><ul id="must"></ul>
+        <div class="h">Nice-to-haves</div><ul id="nice"></ul>
+        <div class="h">KPI’er</div><ul id="kpis"></ul>
+        <div class="h">Screening-spørgsmål</div><ul id="qs"></ul>
+        <div class="h">Red flags</div><ul id="rf"></ul>
+        <div class="h">30-sek pitch</div><div id="pitch"></div>
+        <div class="h">Keywords</div><div id="kw"></div>
+        <div class="h">Løn</div><div id="comp"></div>
+        <div class="h">Benefits</div><ul id="benefits"></ul>
       </div>
     </div>
 
-    <!-- Joblinks match -->
+    <!-- Ansøgning -->
     <div class="card">
-      <h2 class="title">Søg & match joblinks</h2>
-      <p class="sub">Indsæt direkte links (ét pr. linje). Systemet kører i batches og scorer relevans ift. din profil.</p>
-      <textarea id="joburls" placeholder="https://...job1
-https://...job2"></textarea>
-      <div style="display:flex; gap:10px; margin-top:12px">
-        <button id="match" class="btn">Søg & match</button>
-        <div id="statusbar"><span class="spinner"></span><span id="statusmsg">Arbejder…</span></div>
-      </div>
-    </div>
-
-    <!-- Resultater -->
-    <div class="grid-2">
-      <!-- Brief -->
-      <div class="card">
-        <h3 class="title">Kandidat-brief</h3>
-        <div id="briefCard" style="display:none">
-          <div class="h">Rolle</div><div id="role"></div>
-          <div class="h">Seniority</div><div id="seniority"></div>
-          <div class="h">Team/kontekst</div><div id="team"></div>
-          <div class="h">Domæne</div><div id="domain"></div>
-          <div class="h">Must-haves</div><ul id="must"></ul>
-          <div class="h">Nice-to-haves</div><ul id="nice"></ul>
-          <div class="h">KPI’er</div><ul id="kpis"></ul>
-          <div class="h">Screening-spørgsmål</div><ul id="qs"></ul>
-          <div class="h">Red flags</div><ul id="rf"></ul>
-          <div class="h">30-sek pitch</div><div id="pitch"></div>
-          <div class="h">Keywords</div><div id="kw"></div>
-          <div class="h">Løn</div><div id="comp"></div>
-          <div class="h">Benefits</div><ul id="benefits"></ul>
-        </div>
-      </div>
-
-      <!-- Ansøgning -->
-      <div class="card">
-        <h3 class="title">Ansøgning</h3>
-        <div id="letterCard" style="white-space:pre-wrap; display:none"></div>
-      </div>
-    </div>
-
-    <!-- Match-liste -->
-    <div class="card">
-      <h3 class="title">Match-resultat</h3>
-      <div id="jobs" class="jobs"></div>
-    </div>
-
-    <!-- Debug -->
-    <div class="card">
-      <h3 class="title">JSON (debug)</h3>
-      <pre id="out">{ }</pre>
+      <h3 class="title">Ansøgning</h3>
+      <div id="letterCard" style="white-space:pre-wrap; display:none"></div>
     </div>
   </div>
+
+  <!-- 4) MATCH-LISTE -->
+  <div class="card">
+    <h3 class="title">Match-resultat</h3>
+    <div id="jobs" class="jobs"></div>
+  </div>
+
+  <!-- 5) DEBUG -->
+  <div class="card">
+    <h3 class="title">JSON (debug)</h3>
+    <pre id="out">{ }</pre>
+  </div>
+</div>
 
   <!-- ============ JS (uændret funktionelt – med busy/status) ============ -->
   <script>
@@ -489,3 +492,4 @@ Benefits:
   </script>
 </body>
 </html>
+
