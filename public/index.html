@@ -10,19 +10,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- Klient-side PDF export -->
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <!-- CV parsing: PDF + DOCX -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth/mammoth.browser.min.js"></script>
+
   <style>
     :root{
-      --bg:#0b0c10;           /* mørk baggrund */
-      --card:#111216;         /* kort baggrund */
-      --muted:#a7aab3;        /* sekundær tekst */
-      --text:#e9eaf0;         /* primær tekst */
-      --brand:#6ee7b7;        /* accent (mint) */
-      --brand-2:#8b5cf6;      /* sekundær accent (lilla) */
-      --line:#1b1d24;         /* kant */
-      --shadow:0 10px 30px rgba(0,0,0,.35);
-      --radius:14px;
-      --radius-sm:10px;
-      --gap:14px;
+      --bg:#0b0c10; --card:#111216; --muted:#a7aab3; --text:#e9eaf0;
+      --brand:#6ee7b7; --brand-2:#8b5cf6; --line:#1b1d24;
+      --shadow:0 10px 30px rgba(0,0,0,.35); --radius:14px; --radius-sm:10px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -31,69 +29,33 @@
       background: radial-gradient(1200px 800px at 20% -10%, #1a1c22 0%, transparent 60%),
                   radial-gradient(900px 600px at 120% -10%, #181a22 0%, transparent 60%),
                   var(--bg);
-      color:var(--text);
-      margin:0;
+      color:var(--text); margin:0;
     }
+    .nav{ position:sticky; top:0; z-index:50; backdrop-filter:saturate(140%) blur(10px);
+      background:rgba(11,12,16,.8); border-bottom:1px solid var(--line); }
+    .nav-inner{ max-width:1100px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; }
+    .brand{ display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.2px; }
+    .brand .logo{ width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg,var(--brand),var(--brand-2)); box-shadow:0 8px 20px rgba(139,92,246,.35); }
+    .muted{ color:var(--muted) }
 
-    /* Header */
-    .nav{
-      position:sticky; top:0; z-index:50;
-      backdrop-filter:saturate(140%) blur(10px);
-      background:rgba(11,12,16,.8);
-      border-bottom:1px solid var(--line);
-    }
-    .nav-inner{
-      max-width:1100px; margin:0 auto; padding:14px 16px;
-      display:flex; align-items:center; gap:12px; justify-content:space-between;
-    }
-    .brand{
-      display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.2px;
-    }
-    .brand .logo{
-      width:28px; height:28px; border-radius:8px;
-      background: linear-gradient(135deg, var(--brand), var(--brand-2));
-      box-shadow:0 8px 20px rgba(139,92,246,.35);
-    }
-    .muted{color:var(--muted)}
+    .wrap{ max-width:1100px; margin:24px auto 80px; padding:0 16px; display:grid; gap:20px }
+    .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:20px }
+    @media (max-width: 940px){ .grid-2{ grid-template-columns:1fr } }
 
-    /* Layout */
-    .wrap{max-width:1100px; margin:24px auto 80px; padding:0 16px; display:grid; gap:20px}
-    .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:20px}
-    @media (max-width: 940px){ .grid-2{grid-template-columns:1fr} }
+    .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); }
+    .title{ font-size:18px; font-weight:700; margin:0 0 10px }
+    .sub{ font-size:14px; color:var(--muted); margin:0 0 14px }
+    .h{ font-weight:600; margin:14px 0 6px }
 
-    /* Card */
-    .card{
-      background: var(--card);
-      border:1px solid var(--line);
-      border-radius: var(--radius);
-      padding:18px;
-      box-shadow: var(--shadow);
-    }
-    .title{font-size:18px; font-weight:700; margin:0 0 10px}
-    .sub{font-size:14px; color:var(--muted); margin:0 0 14px}
-
-    /* Inputs */
-    label{font-size:13px; color:var(--muted)}
-    textarea, select, input, button{
-      font-family:inherit; font-size:14px;
-    }
+    textarea, select, button{ font-family:inherit; font-size:14px }
     textarea{
-      width:100%; min-height:180px; resize:vertical;
-      background:#0e0f13; color:var(--text);
-      border:1px solid var(--line);
-      border-radius:var(--radius-sm);
-      padding:12px 12px;
-      outline:none;
+      width:100%; min-height:180px; resize:vertical; background:#0e0f13; color:var(--text);
+      border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; outline:none;
       transition:border .2s, box-shadow .2s;
     }
     textarea:focus{ border-color:#334155; box-shadow:0 0 0 4px rgba(99,102,241,.08) }
+    select{ background:#0e0f13; color:var(--text); border:1px solid var(--line); border-radius:10px; padding:8px 10px; }
 
-    select{
-      background:#0e0f13; color:var(--text);
-      border:1px solid var(--line); border-radius:10px; padding:8px 10px;
-    }
-
-    /* Buttons */
     .btn{
       appearance:none; border:none; color:#0b0c10; font-weight:600;
       background:linear-gradient(135deg,var(--brand),#9ef7cf);
@@ -101,193 +63,169 @@
       box-shadow:0 10px 20px rgba(110,231,183,.25);
       transition:transform .08s ease, filter .2s ease;
     }
-    .btn.secondary{
-      background:linear-gradient(135deg,#525a70,#6c7085);
-      color:#fff; box-shadow:none;
-    }
-    .btn.ghost{
-      background:transparent; color:var(--text);
-      border:1px solid var(--line);
-    }
+    .btn.secondary{ background:linear-gradient(135deg,#525a70,#6c7085); color:#fff; box-shadow:none; }
+    .btn.ghost{ background:transparent; color:var(--text); border:1px solid var(--line); }
     .btn:hover{ filter:saturate(110%); transform:translateY(-1px) }
     .btn[disabled]{ opacity:.6; cursor:not-allowed; transform:none }
 
-    /* Lists, sections */
-    .h{font-weight:600; margin:14px 0 6px}
-    ul{margin:6px 0 0 18px; color:#d7dae3}
-    a{color:#b1c5ff; text-decoration:none}
-    a:hover{text-decoration:underline}
+    ul{ margin:6px 0 0 18px; color:#d7dae3 }
+    a{ color:#b1c5ff; text-decoration:none } a:hover{text-decoration:underline}
 
-    /* Statusbar */
-    #statusbar{
-      display:none; gap:10px; align-items:center;
-      border:1px dashed #2b2e38; background:#0e1015;
-      padding:10px 12px; border-radius:12px; color:#d0d3dc;
-    }
-    .spinner{
-      width:16px; height:16px; border:2px solid #3a3e4a;
-      border-top-color:#e5e7eb; border-radius:50%;
-      animation:spin .9s linear infinite;
-    }
-    @keyframes spin{to{transform:rotate(360deg)}}
+    #statusbar{ display:none; gap:10px; align-items:center; border:1px dashed #2b2e38; background:#0e1015; padding:10px 12px; border-radius:12px; color:#d0d3dc; }
+    .spinner{ width:16px; height:16px; border:2px solid #3a3e4a; border-top-color:#e5e7eb; border-radius:50%; animation:spin .9s linear infinite; }
+    @keyframes spin{ to{ transform:rotate(360deg) } }
 
-    /* Job cards grid */
-    .jobs{display:grid; grid-template-columns:1fr 1fr; gap:16px}
-    @media (max-width: 980px){ .jobs{grid-template-columns:1fr} }
-
-    /* Debug pre */
-    pre{background:#0e1015; border:1px solid #1b1d24; color:#cbd5e1}
+    .jobs{ display:grid; grid-template-columns:1fr 1fr; gap:16px }
+    @media (max-width: 980px){ .jobs{ grid-template-columns:1fr } }
+    pre{ background:#0e1015; border:1px solid #1b1d24; color:#cbd5e1; padding:12px; border-radius:10px; overflow:auto }
   </style>
-  
-  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mammoth/mammoth.browser.min.js"></script>
 </head>
 <body>
   <!-- Topbar -->
   <div class="nav">
     <div class="nav-inner">
-      <div class="brand">
-        <div class="logo"></div>
-        Job Helper
-      </div>
-      <div class="muted">Brief • Ansøgning • Match</div>
+      <div class="brand"><div class="logo"></div>Job Helper</div>
+      <div class="muted">Profil • Match • Brief • Ansøgning</div>
     </div>
   </div>
 
   <div class="wrap">
-  <!-- 1) DIN PROFIL ØVERST -->
-  <div class="card">
-    <h2 class="title">Din profil • Generér ansøgning</h2>
-    <p class="sub">Skriv kort resumé + 5–8 nøglepunkter (styrker/resultater/tech). Vælg tone og længde.</p>
+    <!-- 1) DIN PROFIL ØVERST -->
+    <div class="card">
+      <h2 class="title">Din profil</h2>
+      <p class="sub">Upload dit CV eller skriv et kort resumé + 5–8 nøglepunkter. Bruges til både match og ansøgning.</p>
 
-    <div class="grid-2">
-      <div>
-        <div class="h">Din profil</div>
-        <div style="display:flex; gap:10px; align-items:center; margin:8px 0 6px">
-        <input id="cvfile" type="file" accept=".pdf,.docx,.txt" style="display:none" />
-        <button id="uploadCVBtn" class="btn ghost" type="button">Upload CV (PDF/DOCX/TXT)</button>
-        <span class="sub" style="margin-left:6px">Indholdet hentes lokalt i din browser (vi uploader ikke filen).</span>
-        </div>
-        <textarea id="profile" placeholder="Fx:
+      <div class="grid-2">
+        <div>
+          <div class="h">Upload eller indsæt manuelt</div>
+          <div style="display:flex; gap:10px; align-items:center; margin:8px 0 6px">
+            <input id="cvfile" type="file" accept=".pdf,.docx,.txt" style="display:none" />
+            <button id="uploadCVBtn" class="btn ghost" type="button">Upload CV (PDF/DOCX/TXT)</button>
+            <span class="sub" style="margin-left:6px">Alt læses lokalt i din browser.</span>
+          </div>
+          <textarea id="profile" placeholder="Fx:
 Performance manager med 6+ år i pensions-/forsikringsbranchen...
 - Zapier-automatisering der reducerede manuelle timer med 40%
 - Power BI-dashboards for salg/indtjening
 - SQL basics, stærk logisk tænkning
 - Samarbejde med salgsledelse, kommercielt fokus
 "></textarea>
-      </div>
-      <div>
-        <div class="grid-2">
-          <div>
-            <label for="tone">Tone</label><br/>
-            <select id="tone">
-              <option value="professionel" selected>Professionel</option>
-              <option value="entusiastisk">Entusiastisk</option>
-              <option value="selvsikker">Selvsikker</option>
-              <option value="venlig">Venlig</option>
-            </select>
-          </div>
-          <div>
-            <label for="len">Længde</label><br/>
-            <select id="len">
-              <option value="short">Kort</option>
-              <option value="medium" selected>Mellem</option>
-              <option value="long">Lang</option>
-            </select>
-          </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 2) TO KORT SIDE-OM-SIDE: (A) MATCH-LINKS • (B) JOBOPSLAG/BRIEF -->
-  <div class="grid-2">
-    <!-- (A) Venstre: Joblinks match -->
-    <div class="card">
-      <h2 class="title">Søg & match joblinks</h2>
-      <p class="sub">Indsæt direkte links (ét pr. linje). Systemet kører i batches og scorer relevans ift. din profil.</p>
-      <textarea id="joburls" placeholder="https://...job1
-https://...job2"></textarea>
-      <div style="display:flex; gap:10px; margin-top:12px; align-items:center">
-        <button id="match" class="btn">Søg & match</button>
-        <div id="statusbar"><span class="spinner"></span><span id="statusmsg">Arbejder…</span></div>
-      </div>
-    </div>
-
-    <!-- (B) Højre: Jobopslag + brief/ATS/PDF -->
-    <div class="card">
-      <h2 class="title">Jobopslag • Brief & eksport</h2>
-      <p class="sub">Indsæt jobopslag som tekst eller URL. Vælg sprog og generér brief.</p>
-
-      <div style="display:flex; gap:10px; align-items:end; justify-content:space-between; flex-wrap:wrap">
         <div>
-          <label for="lang">Sprog</label><br/>
-          <select id="lang">
-            <option value="da" selected>dansk</option>
-            <option value="en">english</option>
-          </select>
-        </div>
-        <div style="display:flex; gap:10px">
-          <button id="gen" class="btn">Generér brief</button>
-          <button id="copy" class="btn ghost">Kopiér til ATS</button>
-          <button id="pdf" class="btn secondary">Download PDF</button>
-        </div>
-      </div>
-
-      <div class="h" style="margin-top:10px">Jobopslag (tekst eller link)</div>
-      <textarea id="jobtext" placeholder="Indsæt jobtekst eller URL..."></textarea>
-    </div>
-  </div>
-
-  <!-- 3) RESULTATER: Brief + Ansøgning -->
-  <div class="grid-2">
-    <!-- Brief -->
-    <div class="card">
-      <h3 class="title">Kandidat-brief</h3>
-      <div id="briefCard" style="display:none">
-        <div class="h">Rolle</div><div id="role"></div>
-        <div class="h">Seniority</div><div id="seniority"></div>
-        <div class="h">Team/kontekst</div><div id="team"></div>
-        <div class="h">Domæne</div><div id="domain"></div>
-        <div class="h">Must-haves</div><ul id="must"></ul>
-        <div class="h">Nice-to-haves</div><ul id="nice"></ul>
-        <div class="h">KPI’er</div><ul id="kpis"></ul>
-        <div class="h">Screening-spørgsmål</div><ul id="qs"></ul>
-        <div class="h">Red flags</div><ul id="rf"></ul>
-        <div class="h">30-sek pitch</div><div id="pitch"></div>
-        <div class="h">Keywords</div><div id="kw"></div>
-        <div class="h">Løn</div><div id="comp"></div>
-        <div class="h">Benefits</div><ul id="benefits"></ul>
-        <div class="h">Ansøgning</div>
-        <div class="row" style="margin-top:6px">
-          <button id="genLetterFromBrief" class="btn">Generér ansøgning</button>
-          <button id="copyLetterFromBrief" class="btn ghost">Kopiér ansøgning</button>
+          <div class="grid-2">
+            <div>
+              <label for="tone">Tone</label><br/>
+              <select id="tone">
+                <option value="professionel" selected>Professionel</option>
+                <option value="entusiastisk">Entusiastisk</option>
+                <option value="selvsikker">Selvsikker</option>
+                <option value="venlig">Venlig</option>
+              </select>
+            </div>
+            <div>
+              <label for="len">Længde</label><br/>
+              <select id="len">
+                <option value="short">Kort</option>
+                <option value="medium" selected>Mellem</option>
+                <option value="long">Lang</option>
+              </select>
+            </div>
+          </div>
+          <div id="statusbar" style="margin-top:14px">
+            <span class="spinner"></span><span id="statusmsg">Arbejder…</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Ansøgning -->
+    <!-- 2) TO KORT SIDE-OM-SIDE: (A) MATCH-LINKS • (B) JOBOPSLAG/BRIEF -->
+    <div class="grid-2">
+      <!-- (A) Venstre: Joblinks match -->
+      <div class="card">
+        <h2 class="title">Søg & match joblinks</h2>
+        <p class="sub">Indsæt direkte links (ét pr. linje). Der matches mod din profil i batches.</p>
+        <textarea id="joburls" placeholder="https://...job1
+https://...job2"></textarea>
+        <div style="display:flex; gap:10px; margin-top:12px; align-items:center">
+          <button id="match" class="btn">Søg & match</button>
+        </div>
+      </div>
+
+      <!-- (B) Højre: Jobopslag + brief/ATS/PDF -->
+      <div class="card">
+        <h2 class="title">Jobopslag • Brief & eksport</h2>
+        <p class="sub">Indsæt jobopslag som tekst eller URL. Vælg sprog og generér brief.</p>
+
+        <div style="display:flex; gap:10px; align-items:end; justify-content:space-between; flex-wrap:wrap">
+          <div>
+            <label for="lang">Sprog</label><br/>
+            <select id="lang">
+              <option value="da" selected>dansk</option>
+              <option value="en">english</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:10px">
+            <button id="gen" class="btn">Generér brief</button>
+            <button id="copy" class="btn ghost">Kopiér til ATS</button>
+            <button id="pdf" class="btn secondary">Download PDF</button>
+          </div>
+        </div>
+
+        <div class="h" style="margin-top:10px">Jobopslag (tekst eller link)</div>
+        <textarea id="jobtext" placeholder="Indsæt jobtekst eller URL..."></textarea>
+      </div>
+    </div>
+
+    <!-- 3) RESULTATER: Brief + Ansøgning -->
+    <div class="grid-2">
+      <!-- Brief -->
+      <div class="card">
+        <h3 class="title">Kandidat-brief</h3>
+        <div id="briefCard" style="display:none">
+          <div class="h">Rolle</div><div id="role"></div>
+          <div class="h">Seniority</div><div id="seniority"></div>
+          <div class="h">Team/kontekst</div><div id="team"></div>
+          <div class="h">Domæne</div><div id="domain"></div>
+          <div class="h">Must-haves</div><ul id="must"></ul>
+          <div class="h">Nice-to-haves</div><ul id="nice"></ul>
+          <div class="h">KPI’er</div><ul id="kpis"></ul>
+          <div class="h">Screening-spørgsmål</div><ul id="qs"></ul>
+          <div class="h">Red flags</div><ul id="rf"></ul>
+          <div class="h">30-sek pitch</div><div id="pitch"></div>
+          <div class="h">Keywords</div><div id="kw"></div>
+          <div class="h">Løn</div><div id="comp"></div>
+          <div class="h">Benefits</div><ul id="benefits"></ul>
+
+          <!-- NYT: Ansøgningsknapper her -->
+          <div class="h">Ansøgning</div>
+          <div class="row" style="margin-top:6px">
+            <button id="genLetterFromBrief" class="btn" disabled>Generér ansøgning</button>
+            <button id="copyLetterFromBrief" class="btn ghost" disabled>Kopiér ansøgning</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ansøgning -->
+      <div class="card">
+        <h3 class="title">Ansøgning</h3>
+        <div id="letterCard" style="white-space:pre-wrap; display:none"></div>
+      </div>
+    </div>
+
+    <!-- 4) MATCH-LISTE -->
     <div class="card">
-      <h3 class="title">Ansøgning</h3>
-      <div id="letterCard" style="white-space:pre-wrap; display:none"></div>
+      <h3 class="title">Match-resultat</h3>
+      <div id="jobs" class="jobs"></div>
+    </div>
+
+    <!-- 5) DEBUG -->
+    <div class="card">
+      <h3 class="title">JSON (debug)</h3>
+      <pre id="out">{ }</pre>
     </div>
   </div>
 
-  <!-- 4) MATCH-LISTE -->
-  <div class="card">
-    <h3 class="title">Match-resultat</h3>
-    <div id="jobs" class="jobs"></div>
-  </div>
-
-  <!-- 5) DEBUG -->
-  <div class="card">
-    <h3 class="title">JSON (debug)</h3>
-    <pre id="out">{ }</pre>
-  </div>
-</div>
-
-  <!-- ============ JS (uændret funktionelt – med busy/status) ============ -->
+  <!-- ============ JS (status/busy + handlers + CV-upload) ============ -->
   <script>
     const $ = (id) => document.getElementById(id);
 
@@ -324,6 +262,9 @@ https://...job2"></textarea>
         $('comp').textContent = [b.compensation.range, b.compensation.currency, b.compensation.notes].filter(Boolean).join(' | ');
       }
       fillList($('benefits'), b.benefits || []);
+
+      // Aktivér ansøgningsknappen nu hvor et konkret job/brief findes
+      $('genLetterFromBrief')?.removeAttribute('disabled');
     }
 
     // Brief fra tekst/URL
@@ -346,7 +287,7 @@ https://...job2"></textarea>
       finally { release(); setStatus(false); }
     };
 
-    // ATS-kopi
+    // ATS-kopi (brief)
     $('copy').onclick = async () => {
       const t = `
 Rolle: ${$('role').textContent}
@@ -385,41 +326,13 @@ Benefits:
       catch(e) { alert('Kunne ikke kopiere'); }
     };
 
-    // PDF
+    // PDF (briefkort)
     $('pdf').onclick = () => {
       const opt = { margin: 10, filename: 'kandidat-brief.pdf' };
       html2pdf().set(opt).from($('briefCard')).save();
     };
 
-    // Ansøgning
-    $('genLetter').onclick = async (e) => {
-      const release = setBusyBtn(e.currentTarget, 'Genererer…');
-      setStatus(true, 'Genererer ansøgning…');
-      try {
-        const job_text = $('jobtext').value.trim();
-        const candidate_profile = $('profile').value.trim();
-        const language = $('lang').value;
-        const tone = $('tone').value;
-        const length = $('len').value;
-        if (!job_text || !candidate_profile) { alert('Udfyld både jobopslag og kandidatprofil.'); return; }
-        const resp = await fetch('/api/coverletter', {
-          method: 'POST', headers: { 'Content-Type':'application/json' },
-          body: JSON.stringify({ job_text, candidate_profile, language, tone, length })
-        });
-        if (resp.status === 429) { alert('Rate limit hos modellen. Vent lidt og prøv igen.'); return; }
-        const data = await resp.json();
-        const card = $('letterCard'); card.textContent = data.letter || '(intet svar)'; card.style.display='block';
-      } catch(err){ alert('Fejl under generering af ansøgning.'); console.error(err); }
-      finally { release(); setStatus(false); }
-    };
-    $('copyLetter').onclick = async () => {
-      const text = $('letterCard').textContent.trim();
-      if (!text) { alert('Der er ikke genereret en ansøgning endnu.'); return; }
-      try { await navigator.clipboard.writeText(text); alert('Ansøgning kopieret!'); }
-      catch { alert('Kunne ikke kopiere.'); }
-    };
-
-    // Match: kort + knapper
+    // Match: jobkort + knapper
     function createJobCard(job) {
       const div = document.createElement('div');
       div.className = 'card';
@@ -434,6 +347,7 @@ Benefits:
         </div>
       `;
 
+      // Per-kort: Brief
       div.querySelector('.btn-brief').onclick = async (ev) => {
         const btn = ev.currentTarget; const release = setBusyBtn(btn, 'Genererer...');
         setStatus(true, 'Genererer brief for det valgte job…');
@@ -447,12 +361,15 @@ Benefits:
           const data = await resp.json();
           const brief = data.brief || data;
           $('out').textContent = JSON.stringify(brief, null, 2);
+          // Sæt kilde i jobtext, så ansøgning fra brief ved hvad der er valgt
+          $('jobtext').value = job.url;
           renderBrief(brief);
           window.scrollTo({ top: $('briefCard').offsetTop - 20, behavior: 'smooth' });
         } catch (e) { alert('Kunne ikke generere brief.'); console.error(e); }
         finally { release(); setStatus(false); }
       };
 
+      // Per-kort: Ansøgning
       div.querySelector('.btn-letter').onclick = async (ev) => {
         const btn = ev.currentTarget; const release = setBusyBtn(btn, 'Genererer…');
         setStatus(true, 'Genererer ansøgning…');
@@ -468,6 +385,7 @@ Benefits:
           if (resp.status === 429) { alert('Rate limit hos modellen. Vent lidt og prøv igen.'); return; }
           const data = await resp.json();
           const card = $('letterCard'); card.textContent = data.letter || '(intet svar)'; card.style.display='block';
+          $('copyLetterFromBrief')?.removeAttribute('disabled'); // nu kan copy bruges
           window.scrollTo({ top: card.offsetTop - 20, behavior: 'smooth' });
         } catch (e) { alert('Kunne ikke generere ansøgning.'); console.error(e); }
         finally { release(); setStatus(false); }
@@ -483,7 +401,7 @@ Benefits:
         const candidate_profile = $('profile').value.trim();
         const language = $('lang').value;
         if (!urlsRaw) { alert('Indsæt mindst ét joblink.'); return; }
-        if (!candidate_profile) { alert('Udfyld kandidatprofil.'); return; }
+        if (!candidate_profile) { alert('Upload/skriv din profil først.'); return; }
         $('joburls').disabled = true; $('profile').disabled = true;
         const urls = urlsRaw.split('\n').map(s => s.trim()).filter(Boolean);
         const resp = await fetch('/api/jobs', {
@@ -497,106 +415,80 @@ Benefits:
       } catch (err) { alert('Fejl under matching.'); console.error(err); }
       finally { $('joburls').disabled = false; $('profile').disabled = false; release(); setStatus(false); }
     };
-    // ========== CV-upload: parse PDF/DOCX/TXT og læg tekst i #profile ==========
-  // pdf.js worker (kræves af pdfjs-dist)
-  if (window['pdfjsLib']) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.worker.min.js';
-  }
 
-  // Hjælpere
-  function stripWhitespace(s) {
-    return (s || '').replace(/\u00A0/g,' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
-  }
-  function textFromTxt(file) {
-    return new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(stripWhitespace(r.result));
-      r.onerror = reject;
-      r.readAsText(file);
-    });
-  }
-  async function textFromPdf(file) {
-    const buf = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-    let out = '';
-    for (let p = 1; p <= pdf.numPages; p++) {
-      const page = await pdf.getPage(p);
-      const content = await page.getTextContent();
-      const strings = content.items.map(i => (i.str || ''));
-      out += strings.join(' ') + '\n\n';
+    // ===== Ansøgning fra brief-sektionen =====
+    function getCurrentJobSource(){ return $('jobtext').value.trim(); }
+    $('genLetterFromBrief').onclick = async (e) => {
+      const release = setBusyBtn(e.currentTarget, 'Genererer…');
+      setStatus(true, 'Genererer ansøgning…');
+      try {
+        const job_text = getCurrentJobSource();
+        const candidate_profile = $('profile').value.trim();
+        const language = $('lang').value;
+        const tone = $('tone').value;
+        const length = $('len').value;
+        if (!job_text) { alert('Indsæt jobopslag eller vælg et job fra listen først.'); return; }
+        if (!candidate_profile) { alert('Upload/skriv din profil først.'); return; }
+        const resp = await fetch('/api/coverletter', {
+          method: 'POST', headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ job_text, candidate_profile, language, tone, length })
+        });
+        if (resp.status === 429) { alert('Rate limit hos modellen. Vent lidt og prøv igen.'); return; }
+        const data = await resp.json();
+        const card = $('letterCard'); card.textContent = data.letter || '(intet svar)'; card.style.display='block';
+        $('copyLetterFromBrief')?.removeAttribute('disabled');
+        window.scrollTo({ top: card.offsetTop - 20, behavior: 'smooth' });
+      } catch (err) { console.error(err); alert('Fejl under generering af ansøgning.'); }
+      finally { release(); setStatus(false); }
+    };
+    $('copyLetterFromBrief').onclick = async () => {
+      const text = $('letterCard').textContent.trim();
+      if (!text) { alert('Der er ikke genereret en ansøgning endnu.'); return; }
+      try { await navigator.clipboard.writeText(text); alert('Ansøgning kopieret!'); }
+      catch { alert('Kunne ikke kopiere.'); }
+    };
+
+    // ===== CV-upload: parse PDF/DOCX/TXT og læg tekst i #profile =====
+    if (window['pdfjsLib']) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.worker.min.js';
     }
-    return stripWhitespace(out);
-  }
-  async function textFromDocx(file) {
-    const arrayBuffer = await file.arrayBuffer();
-    const result = await window.mammoth.convertToHtml({ arrayBuffer });
-    // Mammoth giver HTML – tag ren tekst
-    const div = document.createElement('div');
-    div.innerHTML = result.value || '';
-    const text = stripWhitespace(div.textContent || '');
-    return text;
-  }
-
-  async function extractCVText(file) {
-    const name = (file.name || '').toLowerCase();
-    if (name.endsWith('.txt')) return textFromTxt(file);
-    if (name.endsWith('.pdf')) return textFromPdf(file);
-    if (name.endsWith('.docx')) return textFromDocx(file);
-    // fallback via MIME-type
-    if (file.type === 'text/plain') return textFromTxt(file);
-    if (file.type === 'application/pdf') return textFromPdf(file);
-    // hvis ukendt – prøv som txt
-    return textFromTxt(file);
-  }
-
-  // UI wiring
-  const uploadBtn = document.getElementById('uploadCVBtn');
-  const fileInput = document.getElementById('cvfile');
-
-  function setStatus(show, msg='Arbejder…') {
-    const bar = document.getElementById('statusbar');
-    const txt = document.getElementById('statusmsg');
-    if (!bar || !txt) return;
-    txt.textContent = msg;
-    bar.style.display = show ? 'flex' : 'none';
-  }
-  function setBusyBtn(btn, busyText) {
-    if (!btn) return () => {};
-    const orig = btn.textContent;
-    btn.disabled = true; btn.textContent = busyText;
-    return () => { btn.disabled = false; btn.textContent = orig; };
-  }
-
-  uploadBtn?.addEventListener('click', () => fileInput.click());
-  fileInput?.addEventListener('change', async () => {
-    const f = fileInput.files?.[0];
-    if (!f) return;
-    const release = setBusyBtn(uploadBtn, 'Indlæser…');
-    setStatus(true, 'Indlæser og udtrækker tekst fra dit CV…');
-    try {
-      let text = await extractCVText(f);
-
-      // Klip ned, så vi ikke sender en hel bog til modellen
-      const MAX_CHARS = 8000; // ca. ~2k tokens
-      if (text.length > MAX_CHARS) text = text.slice(0, MAX_CHARS) + '\n\n[...tekst forkortet…]';
-
-      // læg i tekstfeltet
-      const ta = document.getElementById('profile');
-      ta.value = text;
-
-      // lille hjælpetekst hvis CV’et er tomt/kort
-      if (text.length < 400) {
-        alert('Dit CV ser meget kort ud eller kunne ikke udtrækkes fuldt. Tjek gerne, og suppler evt. manuelt med 5–8 nøglepunkter.');
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Kunne ikke indlæse CV. Tjek filtypen (PDF/DOCX/TXT) og prøv igen.');
-    } finally {
-      release();
-      setStatus(false);
-      // ryd filinput så man kan uploade samme fil igen hvis nødvendigt
-      fileInput.value = '';
+    function stripWhitespace(s){ return (s||'').replace(/\u00A0/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim(); }
+    function textFromTxt(file){
+      return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(stripWhitespace(r.result)); r.onerror=reject; r.readAsText(file); });
     }
+    async function textFromPdf(file){
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      let out=''; for (let p=1; p<=pdf.numPages; p++){ const page=await pdf.getPage(p); const content=await page.getTextContent(); out += content.items.map(i=>i.str||'').join(' ') + '\n\n'; }
+      return stripWhitespace(out);
+    }
+    async function textFromDocx(file){
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await window.mammoth.convertToHtml({ arrayBuffer });
+      const div = document.createElement('div'); div.innerHTML = result.value || '';
+      return stripWhitespace(div.textContent || '');
+    }
+    async function extractCVText(file){
+      const name = (file.name||'').toLowerCase();
+      if (name.endsWith('.txt')) return textFromTxt(file);
+      if (name.endsWith('.pdf')) return textFromPdf(file);
+      if (name.endsWith('.docx')) return textFromDocx(file);
+      if (file.type==='text/plain') return textFromTxt(file);
+      if (file.type==='application/pdf') return textFromPdf(file);
+      return textFromTxt(file);
+    }
+    const uploadBtn = $('uploadCVBtn'); const fileInput = $('cvfile');
+    uploadBtn?.addEventListener('click', ()=> fileInput.click());
+    fileInput?.addEventListener('change', async () => {
+      const f = fileInput.files?.[0]; if (!f) return;
+      const release = setBusyBtn(uploadBtn, 'Indlæser…'); setStatus(true, 'Indlæser og udtrækker tekst fra dit CV…');
+      try{
+        let text = await extractCVText(f);
+        const MAX_CHARS = 8000; if (text.length > MAX_CHARS) text = text.slice(0, MAX_CHARS) + '\n\n[...tekst forkortet…]';
+        $('profile').value = text;
+        if (text.length < 400) alert('Dit CV ser meget kort ud eller kunne ikke udtrækkes fuldt. Supplér gerne manuelt med 5–8 nøglepunkter.');
+      } catch(e){ console.error(e); alert('Kunne ikke indlæse CV. Tjek filtypen (PDF/DOCX/TXT) og prøv igen.'); }
+      finally { release(); setStatus(false); fileInput.value=''; }
     });
   </script>
 </body>
