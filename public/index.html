@@ -3,82 +3,95 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Jobopslag → Kandidat-brief</title>
+  <title>Job Helper – Brief, Ansøgning & Match</title>
   <style>
-    body { font-family: system-ui, Arial; max-width: 900px; margin: 24px auto; padding: 0 12px; }
-    textarea { width: 100%; height: 260px; }
+    body { font-family: system-ui, Arial; max-width: 980px; margin: 24px auto; padding: 0 12px; }
+    textarea { width: 100%; height: 220px; }
     pre { background: #f6f8fa; padding: 12px; overflow:auto; border-radius: 6px; }
     .row{ display:flex; gap:12px; align-items:center; flex-wrap: wrap; }
     select, button { padding: 8px 12px; cursor:pointer; }
+    .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
     .card { border:1px solid #e5e7eb; border-radius:8px; padding:12px; margin-top:12px; }
     .h { font-weight:600; margin: 6px 0; }
     ul { margin:6px 0 0 18px; }
+    .spinner {
+      display:inline-block; width:16px; height:16px; border:2px solid #ccc;
+      border-top-color:#111; border-radius:50%; animation: spin 0.8s linear infinite; margin-right:8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #statusbar {
+      display:none; margin:10px 0; padding:10px; border:1px solid #e5e7eb; border-radius:6px;
+      background:#fafafa; font-size:14px;
+    }
   </style>
   <!-- Klient-side PDF (helt gratis) -->
   <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-  <h1>Jobopslag → Kandidat-brief</h1>
+  <h1>Job Helper</h1>
+
   <div class="row">
     <label for="lang">Sprog:</label>
     <select id="lang">
       <option value="da" selected>dansk</option>
       <option value="en">english</option>
     </select>
-    <button id="gen">Generér brief</button>
-    <button id="copy">Kopiér til ATS</button>
-    <button id="pdf">Download PDF</button>
+    <button id="gen" class="btn">Generér brief</button>
+    <button id="copy" class="btn">Kopiér til ATS</button>
+    <button id="pdf" class="btn">Download PDF</button>
   </div>
 
-  <p>Indsæt jobopslaget her:</p>
-  <textarea id="jobtext" placeholder="Indsæt jobtekst..."></textarea>
+  <p>Indsæt jobopslaget (hele teksten) ELLER et link til opslaget:</p>
+  <textarea id="jobtext" placeholder="Indsæt jobtekst eller URL..."></textarea>
 
+  <!-- NYT: Kandidatprofil til ansøgning -->
   <h2>Din profil (til ansøgningen)</h2>
-<p>Skriv kort: resumé + 5–8 nøglepunkter (styrker/resultater/tech).</p>
-<textarea id="profile" placeholder="Fx:
-Performance manager med 6+ år i pensionsbranchen...
+  <p>Skriv kort: resumé + 5–8 nøglepunkter (styrker/resultater/tech).</p>
+  <textarea id="profile" placeholder="Fx:
+Performance manager med 6+ år i pensions-/forsikringsbranchen...
 - Zapier-automatisering der reducerede manuelle timer med 40%
 - Power BI-dashboards for salg/indtjening
 - SQL basics, stærk logisk tænkning
 - Samarbejde med salgsledelse, kommercielt fokus
 "></textarea>
 
-<div class="row">
-  <label for="tone">Tone:</label>
-  <select id="tone">
-    <option value="professionel" selected>Professionel</option>
-    <option value="entusiastisk">Entusiastisk</option>
-    <option value="selvsikker">Selvsikker</option>
-    <option value="venlig">Venlig</option>
-  </select>
+  <div class="row">
+    <label for="tone">Tone:</label>
+    <select id="tone">
+      <option value="professionel" selected>Professionel</option>
+      <option value="entusiastisk">Entusiastisk</option>
+      <option value="selvsikker">Selvsikker</option>
+      <option value="venlig">Venlig</option>
+    </select>
 
-  <label for="len">Længde:</label>
-  <select id="len">
-    <option value="short">Kort</option>
-    <option value="medium" selected>Mellem</option>
-    <option value="long">Lang</option>
-  </select>
+    <label for="len">Længde:</label>
+    <select id="len">
+      <option value="short">Kort</option>
+      <option value="medium" selected>Mellem</option>
+      <option value="long">Lang</option>
+    </select>
 
-  <button id="genLetter">Generér ansøgning</button>
-  <button id="copyLetter">Kopiér ansøgning</button>
-</div>
+    <button id="genLetter" class="btn">Generér ansøgning</button>
+    <button id="copyLetter" class="btn">Kopiér ansøgning</button>
+  </div>
 
-
+  <!-- Joblinks til match -->
   <h2>Joblinks (ét pr. linje)</h2>
-<p>Indsæt direkte links til jobopslag (fx fra e-mail alerts eller manuelt fra jobportaler).</p>
-<textarea id="joburls" placeholder="https://...job1
+  <p>Indsæt direkte links til jobopslag (fra mail alerts eller jobportaler).</p>
+  <textarea id="joburls" placeholder="https://...job1
 https://...job2"></textarea>
-<div class="row">
-  <button id="match">Søg & match</button>
-</div>
+  <div class="row">
+    <button id="match" class="btn">Søg & match</button>
+  </div>
 
-<h2>Match-resultat</h2>
-<div id="jobs"></div>
-  
-<h2>Ansøgning</h2>
-<div id="letterCard" class="card" style="white-space:pre-wrap; display:none"></div>
-  
+  <!-- Statusbar -->
+  <div id="statusbar">
+    <span class="spinner"></span><span id="statusmsg">Arbejder…</span>
+  </div>
+
   <h2>Resultat</h2>
+
+  <!-- Brief-kort -->
   <div id="briefCard" class="card" style="display:none">
     <div class="h">Rolle</div><div id="role"></div>
     <div class="h">Seniority</div><div id="seniority"></div>
@@ -91,13 +104,41 @@ https://...job2"></textarea>
     <div class="h">Red flags</div><ul id="rf"></ul>
     <div class="h">30-sek pitch</div><div id="pitch"></div>
     <div class="h">Keywords</div><div id="kw"></div>
+    <!-- (valgfrit) komp/benefits hvis din backend leverer det -->
+    <div class="h">Løn</div><div id="comp"></div>
+    <div class="h">Benefits</div><ul id="benefits"></ul>
   </div>
 
-  <h3>JSON (til debug)</h3>
+  <!-- Ansøgning -->
+  <h2>Ansøgning</h2>
+  <div id="letterCard" class="card" style="white-space:pre-wrap; display:none"></div>
+
+  <!-- Match-resultater -->
+  <h2>Match-resultat</h2>
+  <div id="jobs"></div>
+
+  <h3>JSON (debug)</h3>
   <pre id="out">{ }</pre>
 
   <script>
+    // ===== Helpers =====
     const $ = (id) => document.getElementById(id);
+
+    function setStatus(show, msg='Arbejder…') {
+      const bar = $('statusbar'), txt = $('statusmsg');
+      if (!bar || !txt) return;
+      txt.textContent = msg;
+      bar.style.display = show ? 'block' : 'none';
+    }
+
+    function setBusyBtn(btn, busyText) {
+      if (!btn) return () => {};
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.classList.add('btn');
+      btn.textContent = busyText;
+      return () => { btn.disabled = false; btn.textContent = orig; };
+    }
 
     function fillList(el, arr) {
       el.innerHTML = '';
@@ -121,24 +162,42 @@ https://...job2"></textarea>
       fillList($('rf'), b.red_flags);
       $('pitch').textContent      = b.candidate_pitch_30s || '';
       $('kw').textContent         = (b.keywords || []).join(', ');
+      if (b.compensation) {
+        $('comp').textContent = [b.compensation.range, b.compensation.currency, b.compensation.notes].filter(Boolean).join(' | ');
+      }
+      fillList($('benefits'), b.benefits || []);
     }
 
-    $('gen').onclick = async () => {
-      const job_text = $('jobtext').value.trim();
-      const language = $('lang').value;
-      $('out').textContent = 'Arbejder...';
-      const resp = await fetch('/api/brief', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ job_text, language })
-      });
-      const data = await resp.json();
-      const brief = data.brief || data;
-      $('out').textContent = JSON.stringify(brief, null, 2);
-      renderBrief(brief);
+    // ===== Brief fra tekst/URL =====
+    $('gen').onclick = async (e) => {
+      const release = setBusyBtn(e.currentTarget, 'Genererer...');
+      setStatus(true, 'Genererer kandidat-brief – vent venligst (5–20 sek).');
+
+      try {
+        const job_text = $('jobtext').value.trim();
+        const language = $('lang').value;
+        const resp = await fetch('/api/brief', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ job_text, language })
+        });
+
+        if (resp.status === 429) { alert('Rate limit hos modellen. Vent lidt og prøv igen.'); return; }
+        const data = await resp.json();
+        const brief = data.brief || data;
+
+        $('out').textContent = JSON.stringify(brief, null, 2);
+        renderBrief(brief);
+      } catch (err) {
+        alert('Der opstod en fejl. Prøv igen.');
+        console.error(err);
+      } finally {
+        release();
+        setStatus(false);
+      }
     };
 
-    // ATS-kopi (ren tekst, pæn formatering)
+    // ===== ATS-kopi (brief) =====
     $('copy').onclick = async () => {
       const t = `
 Rolle: ${$('role').textContent}
@@ -166,137 +225,179 @@ ${$('pitch').textContent}
 
 Keywords:
 ${$('kw').textContent}
+
+Løn:
+${$('comp').textContent}
+
+Benefits:
+- ${Array.from($('benefits').children).map(li => li.textContent).join('\n- ')}
 `.trim();
-      try { await navigator.clipboard.writeText(t); alert('Kopieret til udklipsholder (kan indsættes i ATS/Notion)!'); }
+      try { await navigator.clipboard.writeText(t); alert('Kopieret!'); }
       catch(e) { alert('Kunne ikke kopiere'); }
     };
 
-    // PDF-download (klientside)
+    // ===== PDF (briefkort) =====
     $('pdf').onclick = () => {
       const opt = { margin: 10, filename: 'kandidat-brief.pdf' };
       html2pdf().set(opt).from($('briefCard')).save();
     };
-  </script>
-  <script>
-  // Generér ansøgning
-  document.getElementById('genLetter').onclick = async () => {
-    const job_text = document.getElementById('jobtext').value.trim();
-    const candidate_profile = document.getElementById('profile').value.trim();
-    const language = document.getElementById('lang').value;
-    const tone = document.getElementById('tone').value;
-    const length = document.getElementById('len').value;
 
-    if (!job_text || !candidate_profile) {
-      alert('Udfyld både jobopslag og kandidatprofil.'); return;
+    // ===== Ansøgning fra tekst/URL + profil =====
+    $('genLetter').onclick = async (e) => {
+      const release = setBusyBtn(e.currentTarget, 'Genererer…');
+      setStatus(true, 'Genererer ansøgning – vent venligst.');
+
+      try {
+        const job_text = $('jobtext').value.trim();
+        const candidate_profile = $('profile').value.trim();
+        const language = $('lang').value;
+        const tone = $('tone').value;
+        const length = $('len').value;
+
+        if (!job_text || !candidate_profile) {
+          alert('Udfyld både jobopslag og kandidatprofil.'); return;
+        }
+
+        const resp = await fetch('/api/coverletter', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ job_text, candidate_profile, language, tone, length })
+        });
+        if (resp.status === 429) { alert('Rate limit hos modellen. Vent lidt og prøv igen.'); return; }
+
+        const data = await resp.json();
+        const card = $('letterCard');
+        card.textContent = data.letter || '(intet svar)';
+        card.style.display = 'block';
+      } catch (err) {
+        alert('Der opstod en fejl under generering af ansøgning.');
+        console.error(err);
+      } finally {
+        release();
+        setStatus(false);
+      }
+    };
+
+    $('copyLetter').onclick = async () => {
+      const text = $('letterCard').textContent.trim();
+      if (!text) { alert('Der er ikke genereret en ansøgning endnu.'); return; }
+      try { await navigator.clipboard.writeText(text); alert('Ansøgning kopieret!'); }
+      catch { alert('Kunne ikke kopiere.'); }
+    };
+
+    // ===== Jobmatch: UI + per-kort knapper =====
+    function createJobCard(job) {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+        <div class="h">${job.title}</div>
+        <div><a href="${job.url}" target="_blank">${job.url}</a></div>
+        <div><strong>Score:</strong> ${job.score}/100</div>
+        <p>${job.summary}</p>
+        <div class="row">
+          <button class="btn btn-brief">Generér brief</button>
+          <button class="btn btn-letter">Generér ansøgning</button>
+        </div>
+      `;
+
+      // Per-kort: Brief
+      div.querySelector('.btn-brief').onclick = async (ev) => {
+        const btn = ev.currentTarget;
+        const release = setBusyBtn(btn, 'Genererer...');
+        setStatus(true, 'Genererer brief for det valgte job…');
+
+        try {
+          const language = $('lang').value;
+          const resp = await fetch('/api/brief', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify({ job_text: job.url, language })
+          });
+          if (resp.status === 429) { alert('Rate limit hos modellen. Vent lidt og prøv igen.'); return; }
+          const data = await resp.json();
+          const brief = data.brief || data;
+
+          $('out').textContent = JSON.stringify(brief, null, 2);
+          renderBrief(brief);
+          window.scrollTo({ top: $('briefCard').offsetTop - 20, behavior: 'smooth' });
+        } catch (e) {
+          alert('Kunne ikke generere brief.');
+          console.error(e);
+        } finally {
+          release();
+          setStatus(false);
+        }
+      };
+
+      // Per-kort: Ansøgning
+      div.querySelector('.btn-letter').onclick = async (ev) => {
+        const btn = ev.currentTarget;
+        const release = setBusyBtn(btn, 'Genererer…');
+        setStatus(true, 'Genererer ansøgning – vent venligst.');
+
+        try {
+          const language = $('lang').value;
+          const tone = $('tone')?.value || 'professionel';
+          const length = $('len')?.value || 'medium';
+          const candidate_profile = $('profile').value.trim();
+
+          const resp = await fetch('/api/coverletter', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify({ job_text: job.url, candidate_profile, language, tone, length })
+          });
+          if (resp.status === 429) { alert('Rate limit hos modellen. Vent lidt og prøv igen.'); return; }
+
+          const data = await resp.json();
+          const card = $('letterCard');
+          card.textContent = data.letter || '(intet svar)';
+          card.style.display = 'block';
+          window.scrollTo({ top: card.offsetTop - 20, behavior: 'smooth' });
+        } catch (e) {
+          alert('Kunne ikke generere ansøgning.');
+          console.error(e);
+        } finally {
+          release();
+          setStatus(false);
+        }
+      };
+
+      return div;
     }
 
-    const resp = await fetch('/api/coverletter', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ job_text, candidate_profile, language, tone, length })
-    });
-    const data = await resp.json();
-    if (data.error) { alert('Fejl: ' + (data.detail || data.error)); return; }
+    $('match').onclick = async (e) => {
+      const release = setBusyBtn(e.currentTarget, 'Matcher...');
+      setStatus(true, 'Matcher joblinks – dette kan tage 10–40 sek afhængigt af antal (kører i batches).');
 
-    const card = document.getElementById('letterCard');
-    card.textContent = data.letter || '(intet svar)';
-    card.style.display = 'block';
-  };
+      try {
+        const urlsRaw = $('joburls').value.trim();
+        const candidate_profile = $('profile').value.trim();
+        const language = $('lang').value;
+        if (!urlsRaw) { alert('Indsæt mindst ét joblink.'); return; }
+        if (!candidate_profile) { alert('Udfyld kandidatprofil.'); return; }
 
-  // Kopiér ansøgning
-  document.getElementById('copyLetter').onclick = async () => {
-    const text = document.getElementById('letterCard').textContent.trim();
-    if (!text) { alert('Der er ikke genereret en ansøgning endnu.'); return; }
-    try { await navigator.clipboard.writeText(text); alert('Ansøgning kopieret!'); }
-    catch { alert('Kunne ikke kopiere.'); }
-  };
-</script>
-  <script>
-  function createJobCard(job) {
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.innerHTML = `
-      <div class="h">${job.title}</div>
-      <div><a href="${job.url}" target="_blank">${job.url}</a></div>
-      <div><strong>Score:</strong> ${job.score}/100</div>
-      <p>${job.summary}</p>
-      <div class="row">
-        <button class="btn-brief">Generér brief</button>
-        <button class="btn-letter">Generér ansøgning</button>
-      </div>
-    `;
+        $('joburls').disabled = true; $('profile').disabled = true;
 
-    // Knap: Brief
-    div.querySelector('.btn-brief').onclick = async () => {
-      const language = document.getElementById('lang').value;
-      // Genbrug /api/brief: sender URL (serveren trækker selv tekst ud)
-      const resp = await fetch('/api/brief', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ job_text: job.url, language })
-      });
-      const data = await resp.json();
-      // Vis i dit eksisterende briefCard
-      const brief = data.brief || data;
-      document.getElementById('out').textContent = JSON.stringify(brief, null, 2);
-      // udfyld kortet
-      const fillList = (el, arr) => { el.innerHTML=''; (arr||[]).forEach(x=>{ const li=document.createElement('li'); li.textContent=x; el.appendChild(li); }); };
-      document.getElementById('briefCard').style.display = 'block';
-      document.getElementById('role').textContent = brief.role_title || '';
-      document.getElementById('seniority').textContent = brief.seniority || '';
-      document.getElementById('team').textContent = brief.team_context || '';
-      document.getElementById('domain').textContent = brief.domain || '';
-      fillList(document.getElementById('must'), brief.must_haves);
-      fillList(document.getElementById('nice'), brief.nice_to_haves);
-      fillList(document.getElementById('kpis'), brief.kpis);
-      fillList(document.getElementById('qs'), brief.screen_questions);
-      fillList(document.getElementById('rf'), brief.red_flags);
-      document.getElementById('pitch').textContent = brief.candidate_pitch_30s || '';
-      document.getElementById('kw').textContent = (brief.keywords||[]).join(', ');
-      // Hvis du tilføjede løn/benefits før:
-      const comp = document.getElementById('comp'); if (comp) comp.textContent = brief.compensation ? [brief.compensation.range, brief.compensation.currency, brief.compensation.notes].filter(Boolean).join(' | ') : '';
-      const ben = document.getElementById('benefits'); if (ben) { ben.innerHTML=''; (brief.benefits||[]).forEach(x=>{ const li=document.createElement('li'); li.textContent=x; ben.appendChild(li); }); }
-      window.scrollTo({ top: document.getElementById('briefCard').offsetTop - 20, behavior: 'smooth' });
+        const urls = urlsRaw.split('\n').map(s => s.trim()).filter(Boolean);
+        const resp = await fetch('/api/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ urls, candidate_profile, language })
+        });
+
+        if (resp.status === 429) { alert('Rate limit hos modellen. Vent lidt og prøv igen.'); return; }
+        const data = await resp.json();
+        const wrap = $('jobs'); wrap.innerHTML = '';
+        (data.jobs || []).forEach(j => wrap.appendChild(createJobCard(j)));
+      } catch (err) {
+        alert('Der opstod en fejl under matching.');
+        console.error(err);
+      } finally {
+        $('joburls').disabled = false; $('profile').disabled = false;
+        release();
+        setStatus(false);
+      }
     };
-
-    // Knap: Ansøgning
-    div.querySelector('.btn-letter').onclick = async () => {
-      const language = document.getElementById('lang').value;
-      const tone = document.getElementById('tone')?.value || 'professionel';
-      const length = document.getElementById('len')?.value || 'medium';
-      const candidate_profile = document.getElementById('profile').value.trim();
-      const resp = await fetch('/api/coverletter', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ job_text: job.url, candidate_profile, language, tone, length })
-      });
-      const data = await resp.json();
-      const card = document.getElementById('letterCard');
-      if (card) { card.textContent = data.letter || '(intet svar)'; card.style.display='block'; }
-      window.scrollTo({ top: card.offsetTop - 20, behavior: 'smooth' });
-    };
-
-    return div;
-  }
-
-  document.getElementById('match').onclick = async () => {
-    const urlsRaw = document.getElementById('joburls').value.trim();
-    const candidate_profile = document.getElementById('profile').value.trim();
-    const language = document.getElementById('lang').value;
-    if (!urlsRaw) { alert('Indsæt mindst ét joblink.'); return; }
-    if (!candidate_profile) { alert('Udfyld kandidatprofil.'); return; }
-    const urls = urlsRaw.split('\n').map(s => s.trim()).filter(Boolean);
-    const resp = await fetch('/api/jobs', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ urls, candidate_profile, language })
-    });
-    const data = await resp.json();
-    const wrap = document.getElementById('jobs'); wrap.innerHTML = '';
-    (data.jobs || []).forEach(j => wrap.appendChild(createJobCard(j)));
-  };
-</script>
+  </script>
 </body>
-
 </html>
-
