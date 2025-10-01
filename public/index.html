@@ -138,8 +138,10 @@
     /* Debug pre */
     pre{background:#0e1015; border:1px solid #1b1d24; color:#cbd5e1}
   </style>
-
+  
   <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth/mammoth.browser.min.js"></script>
 </head>
 <body>
   <!-- Topbar -->
@@ -162,6 +164,11 @@
     <div class="grid-2">
       <div>
         <div class="h">Din profil</div>
+        <div style="display:flex; gap:10px; align-items:center; margin:8px 0 6px">
+        <input id="cvfile" type="file" accept=".pdf,.docx,.txt" style="display:none" />
+        <button id="uploadCVBtn" class="btn ghost" type="button">Upload CV (PDF/DOCX/TXT)</button>
+        <span class="sub" style="margin-left:6px">Indholdet hentes lokalt i din browser (vi uploader ikke filen).</span>
+        </div>
         <textarea id="profile" placeholder="Fx:
 Performance manager med 6+ år i pensions-/forsikringsbranchen...
 - Zapier-automatisering der reducerede manuelle timer med 40%
@@ -489,7 +496,109 @@ Benefits:
       } catch (err) { alert('Fejl under matching.'); console.error(err); }
       finally { $('joburls').disabled = false; $('profile').disabled = false; release(); setStatus(false); }
     };
+    // ========== CV-upload: parse PDF/DOCX/TXT og læg tekst i #profile ==========
+  // pdf.js worker (kræves af pdfjs-dist)
+  if (window['pdfjsLib']) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.worker.min.js';
+  }
+
+  // Hjælpere
+  function stripWhitespace(s) {
+    return (s || '').replace(/\u00A0/g,' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  function textFromTxt(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(stripWhitespace(r.result));
+      r.onerror = reject;
+      r.readAsText(file);
+    });
+  }
+  async function textFromPdf(file) {
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let out = '';
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      const strings = content.items.map(i => (i.str || ''));
+      out += strings.join(' ') + '\n\n';
+    }
+    return stripWhitespace(out);
+  }
+  async function textFromDocx(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await window.mammoth.convertToHtml({ arrayBuffer });
+    // Mammoth giver HTML – tag ren tekst
+    const div = document.createElement('div');
+    div.innerHTML = result.value || '';
+    const text = stripWhitespace(div.textContent || '');
+    return text;
+  }
+
+  async function extractCVText(file) {
+    const name = (file.name || '').toLowerCase();
+    if (name.endsWith('.txt')) return textFromTxt(file);
+    if (name.endsWith('.pdf')) return textFromPdf(file);
+    if (name.endsWith('.docx')) return textFromDocx(file);
+    // fallback via MIME-type
+    if (file.type === 'text/plain') return textFromTxt(file);
+    if (file.type === 'application/pdf') return textFromPdf(file);
+    // hvis ukendt – prøv som txt
+    return textFromTxt(file);
+  }
+
+  // UI wiring
+  const uploadBtn = document.getElementById('uploadCVBtn');
+  const fileInput = document.getElementById('cvfile');
+
+  function setStatus(show, msg='Arbejder…') {
+    const bar = document.getElementById('statusbar');
+    const txt = document.getElementById('statusmsg');
+    if (!bar || !txt) return;
+    txt.textContent = msg;
+    bar.style.display = show ? 'flex' : 'none';
+  }
+  function setBusyBtn(btn, busyText) {
+    if (!btn) return () => {};
+    const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = busyText;
+    return () => { btn.disabled = false; btn.textContent = orig; };
+  }
+
+  uploadBtn?.addEventListener('click', () => fileInput.click());
+  fileInput?.addEventListener('change', async () => {
+    const f = fileInput.files?.[0];
+    if (!f) return;
+    const release = setBusyBtn(uploadBtn, 'Indlæser…');
+    setStatus(true, 'Indlæser og udtrækker tekst fra dit CV…');
+    try {
+      let text = await extractCVText(f);
+
+      // Klip ned, så vi ikke sender en hel bog til modellen
+      const MAX_CHARS = 8000; // ca. ~2k tokens
+      if (text.length > MAX_CHARS) text = text.slice(0, MAX_CHARS) + '\n\n[...tekst forkortet…]';
+
+      // læg i tekstfeltet
+      const ta = document.getElementById('profile');
+      ta.value = text;
+
+      // lille hjælpetekst hvis CV’et er tomt/kort
+      if (text.length < 400) {
+        alert('Dit CV ser meget kort ud eller kunne ikke udtrækkes fuldt. Tjek gerne, og suppler evt. manuelt med 5–8 nøglepunkter.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Kunne ikke indlæse CV. Tjek filtypen (PDF/DOCX/TXT) og prøv igen.');
+    } finally {
+      release();
+      setStatus(false);
+      // ryd filinput så man kan uploade samme fil igen hvis nødvendigt
+      fileInput.value = '';
+    }
+    });
   </script>
 </body>
 </html>
+
 
